@@ -1,46 +1,28 @@
 import socket
-import threading
 
-HEADER = 64
-PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
-ADDR = (SERVER, PORT)
-FORMATE = "utf-8"
-DISCONNECT_MSG = "![DISCONNECT]"
-
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(ADDR)
-
-def handle_client(conn, addr):
-    print(f"[NEW CONNECTION] {addr} connected.")
+def server_program():
+    server_socket = socket.socket()
+    host = socket.gethostname()
+    port = 5000
+    print(host)
+    server_socket.bind((host, port))
     
-    connected = True
-    while connected:
-        try:
-            msg_length = conn.recv(HEADER).decode(FORMATE)
-            if msg_length:
-                msg_length = int(msg_length)
-                msg = conn.recv(msg_length).decode(FORMATE)
-                if msg == DISCONNECT_MSG:
-                    print(f"[{addr}] Disconnected...")
-                    connected = False
-                print(f"[{addr}] {msg}")
-        except Exception as e:
-            print(f"[ERROR] An error occurred with {addr}: {e}")
-            connected = False
+    server_socket.listen(2)
+    conn, address = server_socket.accept()
+    print(f"Connection from {address}")
+    
+    while True:
+        message = conn.recv(1024).decode()
+        if message.lower() == "bye":
+            print("Chat ended.")
+            break
+        print(f"Client: {message}")
+        message = input("Server: ")
+        conn.send(message.encode())
+        if message.lower() == "bye":
+            print("Chat ended.")
+            break
+    
     conn.close()
 
-def start():
-    server.listen()
-    print(f"[LISTENING] Server is listening on {SERVER}")
-    while True:
-        try:
-            conn, addr = server.accept()
-            thread = threading.Thread(target=handle_client, args=(conn, addr))
-            thread.start()
-            print(f"\n[ACTIVE CONNECTIONS] {threading.activeCount() - 1}")
-        except Exception as e:
-            print(f"[ERROR] An error occurred: {e}")
-
-print("[STARTING] Server is starting...")
-start()
+server_program()
